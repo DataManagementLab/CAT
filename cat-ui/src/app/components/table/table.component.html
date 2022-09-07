@@ -1,0 +1,42 @@
+<mat-expansion-panel id="table-{{id}}" class="table-panel" [expanded]="step===id" (opened)="openStep()">
+  <mat-expansion-panel-header>
+    <mat-panel-title><h3>{{table.name}}</h3></mat-panel-title>
+    <mat-panel-description>
+      <mat-icon class="table-pk-icon">vpn_key</mat-icon>
+      <mat-chip-list [selectable]="false">
+        <mat-chip class="panel-title-chip" *ngFor="let partialKey of table.primaryKey"
+                  [disableRipple]="true" [disabled]="true">
+          {{partialKey}}
+        </mat-chip>
+      </mat-chip-list>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <ng-template matExpansionPanelContent class="table-panel-content">
+    <!-- Natural language expressions -->
+    <h4>Natural language expressions</h4>
+    <app-synonym-chip-list [(target)]="table.nlExpressions"></app-synonym-chip-list>
+
+    <!-- Display representation -->
+    <h4>Representation for a row of this table using placeholders</h4>
+    <app-table-representation [table]="table"></app-table-representation>
+    <!--<app-column-chip-list [(target)]="table.representation" [columns]="table.columns"></app-column-chip-list>-->
+    <!-- Resolve Depth -->
+    <h4>Resolve depth for FK relations</h4>
+    <input matInput type="number" [(ngModel)]="table.resolveDepth">
+
+    <!-- Columns -->
+    <h3>Columns</h3>
+    <mat-tab-group [(selectedIndex)]="columnTab">
+      <mat-tab *ngFor="let column of table.columns; let i = index" [label]="column.name">
+        <app-column [table]="table" [column]="column" [id]=i [(tab)]="columnTab" [first]="i===0"
+                    [last]="i===table.columns.length-1"></app-column>
+      </mat-tab>
+    </mat-tab-group>
+    <mat-action-row>
+      <button mat-button *ngIf="!first" (click)="previousStep()">Previous table</button>
+      <button mat-button *ngIf="!last" (click)="nextStep()">Next table</button>
+      <button mat-button *ngIf="last" (click)="nextStep()">Go to procedures</button>
+    </mat-action-row>
+  </ng-template>
+</mat-expansion-panel>

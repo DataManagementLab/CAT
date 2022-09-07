@@ -1,0 +1,7 @@
+<input #fileInput class="file-input" type="file" [accept]="accept" (change)="onChange()"/>
+<button mat-button
+        (click)="fileInput.click()"
+        [ngClass]="{'mat-raised-button': buttonRaised, 'mat-primary': buttonRaised}">
+  <mat-icon *ngIf="icon" [color]="buttonRaised?'#fff':iconColor">{{icon}}</mat-icon>
+  {{buttonText}}
+</button>

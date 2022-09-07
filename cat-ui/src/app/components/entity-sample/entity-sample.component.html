@@ -1,0 +1,28 @@
+<app-synonym-chip-list [(target)]="predicates"
+                       [placeholder]="'Provide a predicate expression'"></app-synonym-chip-list>
+<!-- parameter -->
+<mat-form-field [hintLabel]="'The parameter the sample value refers to'">
+  <mat-select [(ngModel)]="selectedParameter"
+              (ngModelChange)="onParameterChange($event)"
+              [required]="true">
+    <mat-option *ngFor="let parameter of parameters"
+                [value]="parameter"
+                [disabled]="!parameter.tableReference">{{parameter.name}}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+<!-- Table: determined from parameter -->
+<mat-form-field *ngIf="selectedTable !== null" [hintLabel]="'The table of the parameter reference'">
+  <input matInput *ngIf="selectedTable && selectedTable.name" [placeholder]="selectedTable.name" [disabled]="true">
+</mat-form-field>
+<!-- Column: can be chosen -->
+<mat-form-field *ngIf="selectedTable !== null" [hintLabel]="'The column to sample from'">
+  <mat-select [(ngModel)]="selectedColumn"
+              (ngModelChange)="onColumnChange($event)"
+              [required]="true">
+    <mat-option *ngFor="let column of selectedTable.columns"
+                [value]="column">
+      {{column.name}}
+    </mat-option>
+  </mat-select>
+</mat-form-field>

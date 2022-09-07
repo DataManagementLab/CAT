@@ -1,0 +1,14 @@
+version: '3'
+services:
+  db:
+    container_name: rasa_tracker_store
+    image: postgres:latest
+    ports:
+      - 50432:5432
+    volumes:
+      - ./rasa_tracker:/var/lib/postgresql
+      - ./rasa_tracker_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=rasa
+      - POSTGRES_PASSWORD=rasa
+      - POSTGRES_DB=rasa

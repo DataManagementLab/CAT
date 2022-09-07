@@ -1,0 +1,105 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title-group>
+      <mat-card-title>Configure Tables and Procedures</mat-card-title>
+      <mat-card-subtitle>Provide column reference, natural language descriptions for tables, columns, procedures and
+        arguments
+      </mat-card-subtitle>
+    </mat-card-title-group>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="title-button-list">
+      <button mat-raised-button class="title-button" [color]="'primary'" (click)="sidenav.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <app-upload-button class="title-button"
+                         [icon]="'attach_file'"
+                         [buttonText]="'Upload configuration'"
+                         [buttonRaised]="true"
+                         [accept]="'application/json, .json'"
+                         (filesChange)="importConfigFile($event)">
+      </app-upload-button>
+      <app-download-button class="title-button"
+                           [fileName]="'config'"
+                           [fileExt]="'json'"
+                           [type]="'text/json'"
+                           [data]="getJSONConfig()"
+                           [icon]="'get_app'"
+                           [buttonText]="'Download configuration'"
+                           [buttonRaised]="true">
+      </app-download-button>
+      <button mat-raised-button class="title-button" [color]="'warn'" (click)="resetConfiguration()">
+        <mat-icon>settings_backup_restore</mat-icon>
+        Reset configuration
+      </button>
+    </div>
+    <mat-sidenav-container>
+      <!-- Navigation -->
+      <mat-sidenav #sidenav [mode]="'side'" [opened]="true">
+        <!-- Tables -->
+        <mat-nav-list>
+          <a mat-list-item class="sidenav-header-item" href="#tables">
+            <mat-icon class="header-icon">table_chart</mat-icon>
+            Table Configuration
+          </a>
+          <a mat-list-item *ngFor="let table of tables; let i = index" (click)="tableStep=i"
+             href="configuration#table-{{i}}">{{table.name | nl | titlecase}}
+          </a>
+          <!-- Procedures -->
+          <mat-list-item class="sidenav-header-item" href="#procedures">
+            <mat-icon class="header-icon">functions</mat-icon>
+            Procedure Configuration
+          </mat-list-item>
+          <a mat-list-item *ngFor="let procedure of procedures; let i = index" (click)="procedureStep=i"
+             href="configuration#procedure-{{i}}">{{procedure.name | nl | titlecase}}
+          </a>
+        </mat-nav-list>
+      </mat-sidenav>
+
+      <mat-sidenav-content>
+        <!-- Tables -->
+        <mat-card id="tables" class="tables-card">
+          <mat-card-header>
+            <mat-card-title>Tables</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-accordion [displayMode]="'flat'">
+              <app-table *ngFor="let table of tables; let i = index" [table]="table"
+                         [id]="i" [(step)]="tableStep" [first]="i===0" [last]="i===tables.length-1"
+                         (stepChange)="tableStepChanged($event)"></app-table>
+            </mat-accordion>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Procedures -->
+        <mat-card id="procedures" class="procedures-card">
+          <mat-card-header>
+            <mat-card-title>Procedures</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-accordion [displayMode]="'flat'">
+              <app-procedure *ngFor="let procedure of procedures; let i = index" [procedure]="procedure"
+                             [tables]=tables [id]="i" [(step)]="procedureStep" [first]="i===0"
+                             [last]="i===procedures.length-1"></app-procedure>
+            </mat-accordion>
+          </mat-card-content>
+        </mat-card>
+
+      </mat-sidenav-content>
+
+    </mat-sidenav-container>
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <app-download-button class="title-button"
+                         [fileName]="'config'"
+                         [fileExt]="'json'"
+                         [type]="'text/json'"
+                         [data]="getJSONConfig()"
+                         [icon]="'get_app'"
+                         [buttonText]="'Download configuration'"
+                         [buttonRaised]="true">
+    </app-download-button>
+    <button mat-button matStepperPrevious>Back</button>
+    <button mat-button matStepperNext>Next</button>
+  </mat-card-actions>
+</mat-card>

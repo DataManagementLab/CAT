@@ -1,0 +1,9 @@
+version: '3'
+services:
+  rasa_trainer:
+    image: mgs/rasa:latest
+    container_name: rasa_trainer
+    volumes:
+      - ../bot:/app
+    command:
+      - train    

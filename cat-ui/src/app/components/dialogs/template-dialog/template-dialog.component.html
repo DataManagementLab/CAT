@@ -1,0 +1,26 @@
+<h1 mat-dialog-title>{{data.title}}</h1>
+<div mat-dialog-content>
+  <mat-card>
+    <mat-card-header></mat-card-header>
+    <mat-card-content>
+      <h3>Preview</h3>
+      <app-template-display class="template-preview-field" [template]="template"></app-template-display>
+      <h3>Add a template with text and placeholders</h3>
+      <mat-form-field class="template-input-field">
+    <textarea matInput cdkTextareaAutosize type="text" [(ngModel)]="template" (input)="onInputChange($event)">
+    </textarea>
+      </mat-form-field>
+      <h3>Placeholders</h3>
+      <mat-chip-list>
+        <mat-chip *ngFor="let placeholder of data.templateable.placeholders"
+                  selectable="false" color="primary" (click)="addPlaceholder(placeholder)">
+          {{placeholder}}
+        </mat-chip>
+      </mat-chip-list>
+    </mat-card-content>
+  </mat-card>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-raised-button [color]="'primary'" (click)="addTemplate()">Add template</button>
+  <button mat-raised-button (click)="closeDialog()">Close</button>
+</div>

@@ -1,0 +1,17 @@
+FROM rasa/rasa-sdk:latest
+
+USER root
+COPY action_requirements.txt /opt/requirements.txt
+
+RUN apt-get update
+RUN apt-get install nano
+RUN source /opt/venv/bin/activate
+RUN pip install -r /opt/requirements.txt
+
+USER 1001
+
+WORKDIR /app
+EXPOSE 5055
+CMD ["bash"]
+# ENTRYPOINT ["./entrypoint.sh"]
+# CMD ["start", "--actions", "actions.actions"]

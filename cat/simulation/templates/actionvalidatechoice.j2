@@ -1,0 +1,7 @@
+{% extends "action.j2" -%}
+{% block baseClass -%}(AbstractActionValidateChoice){% endblock -%}
+{% block init -%}
+        AbstractActionValidateChoice.__init__(self, '{{ validationSlot }}', '{{ dataType }}')
+{% endblock -%}
+{% block runMethod -%}
+{% endblock -%}

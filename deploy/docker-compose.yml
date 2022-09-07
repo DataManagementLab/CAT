@@ -1,0 +1,82 @@
+version: '3'
+
+services:
+  database:
+    image: postgres:11
+    container_name: rasa_postgres
+    restart: always
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cat
+    networks:
+      - rasa
+    volumes:
+      - /data/cat/rasa_db/data:/var/lib/postgresql/data
+      - ./rasa_db/init_scripts:/docker-entrypoint-initdb.d
+      - ./rasa_db/init_data:/init_data
+  duckling:
+    image: rasa/duckling:latest
+    container_name: rasa_duckling
+    restart: always
+    networks:
+      - rasa
+    ports:
+      - 8000:8000
+  action_server:
+    image: mgs/action-server:latest
+    container_name: rasa_action_server
+    volumes:
+      - ./bot:/app/actions
+    networks:
+      - rasa
+    depends_on:
+      - duckling
+      - database
+  tracker_mongo:
+    image: mongo:latest
+    container_name: rasa_tracker_mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: cat
+      MONGO_INITDB_ROOT_PASSWORD: cat
+    ports:
+      - 27017:27017
+    networks:
+      - rasa
+  tracker_mongo_express:
+    image: mongo-express:latest
+    container_name: rasa_tracker_mongoe
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: cat
+      ME_CONFIG_MONGODB_ADMINPASSWORD: cat
+    depends_on:
+      - tracker_mongo
+    networks:
+      - rasa
+  rasa_server:
+    image: mgs/rasa:latest-transformers
+    container_name: rasa_server
+    environment:
+      CUDA_DEVICE_ORDER: PCI_BUS_ID
+      CUDA_VISIBLE_DEVICES: -1
+    ports:
+      - 5005:5005
+    volumes:
+      - ./bot:/app
+    networks:
+      - rasa
+    depends_on:
+      - tracker_mongo
+      - tracker_mongo_express
+      - database
+      - duckling
+    command:
+      - run
+      - --enable-api
+      - -vv
+networks:
+  rasa:

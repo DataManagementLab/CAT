@@ -1,0 +1,33 @@
+{% extends "action.j2" -%}
+{% block baseClass -%}FormAction(AbstractFormAction){% endblock -%}
+{% block init -%}
+        AbstractFormAction.__init__(self, '{{ targetTable }}', '{{ targetColumn }}', '{{ targetSlot }}', {{ joinTables }})
+{% endblock -%}
+{% block name %}
+    def name(self):
+        return 'action_{{ actionName }}_form'
+{% endblock -%}
+{% block methods %}
+    @staticmethod
+    def target_slots(tracker: "Tracker") -> List[Text]:
+        return {{ targetSlots }}
+
+    @staticmethod
+    def required_slots(tracker: "Tracker") -> List[Text]:
+        return {{ requiredSlots }}
+
+    def slot_mappings(self) -> Dict[Text, Union[Dict, List[Dict]]]:
+        return {
+            {% for mapping in slotMappings -%}
+            {% with slotName = mapping.slotName -%}
+            {% with slotMappings = mapping.slotMappings -%}
+            '{{ slotName }}': [
+                {% for m in slotMappings -%}
+                {{ m }},
+                {% endfor -%}
+            ],
+            {% endwith -%}
+            {% endwith -%}
+            {% endfor -%}
+        }
+{% endblock -%}

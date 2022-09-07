@@ -1,0 +1,26 @@
+<mat-horizontal-stepper linear #stepper>
+  <ng-template matStepperIcon="edit">
+    <mat-icon>done</mat-icon>
+  </ng-template>
+  <mat-step [completed]="databaseStepCompleted">
+    <ng-template matStepLabel>Database connection</ng-template>
+    <app-database-step [(database)]="database" (connected)="onDatabaseConnected($event)"></app-database-step>
+  </mat-step>
+  <mat-step>
+    <ng-template matStepLabel>Configuration</ng-template>
+    <app-configuration-step [(tables)]="tables" [(procedures)]="procedures"
+                            (configChange)="onConfigurationChanged($event)"
+                            [canLoadData]="databaseStepCompleted"></app-configuration-step>
+  </mat-step>
+  <mat-step [completed]="templatingStepCompleted">
+    <ng-template matStepLabel>Natural Language Phrasing</ng-template>
+    <app-templating-step [(tasks)]=tasks [tables]="tables" [procedures]="procedures"
+                         [configChanged]="configChanged"
+                         (finished)="onTasksFinished($event)"></app-templating-step>
+  </mat-step>
+  <!--<mat-step [completed]="simulationStepCompleted">
+    <ng-template matStepLabel>Simulation</ng-template>
+    <app-simulation-step [tasks]=tasks [tables]="tables" [procedures]="procedures" [database]="database"
+                         (finished)="onSimulationFinished($event)"></app-simulation-step>
+  </mat-step>-->
+</mat-horizontal-stepper>

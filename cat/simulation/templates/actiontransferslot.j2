@@ -1,0 +1,12 @@
+{% extends "action.j2" -%}
+{% block init -%}
+        self.source_slot = '{{ sourceSlot }}'
+        Action.__init__(self)
+{% endblock -%}
+{% block runBody -%}
+        transfer_value = get_deserialized_slot(tracker, self.source_slot)
+        if transfer_value is None:
+            dispatcher.utter_message(template=UTTER_ASK_REPHRASE, **tracker.slots)
+            return [UserUtteranceReverted()]
+        return [set_serialized_slot('{{ targetSlot }}', transfer_value)]
+{% endblock -%}

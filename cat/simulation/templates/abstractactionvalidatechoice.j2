@@ -1,0 +1,29 @@
+class AbstractActionValidateChoice(Action):
+
+    class Meta:
+        abstract = True
+
+    def __init__(self, validation_slot: str, data_type: str):
+        self.data_type = data_type
+        self.validation_slot = validation_slot
+        Action.__init__(self)
+
+    def name(self) -> Text:
+        pass
+
+    def run(self, dispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        value = tracker.get_slot(self.validation_slot)
+        if not value:
+            dispatcher.utter_message(template=UTTER_ASK_REPHRASE)
+            return [UserUtteranceReverted()]
+        py_data_type = db.get_python_datatype(self.data_type)
+        normalized = normalize_choice(value, py_data_type, duckling)
+        if not normalized:
+            dispatcher.utter_message(template=UTTER_ASK_REPHRASE)
+            return [UserUtteranceReverted()]
+        if not db.can_cast_datatype(normalized, self.data_type):
+            dispatcher.utter_message(
+                f'I can not use {value} for {self.validation_slot}: expected type {self.data_type}')
+            return [SlotSet(VALIDATION_RESULT_SLOT, False),
+                    UserUtteranceReverted()]
+        return [set_serialized_slot(self.validation_slot, normalized), SlotSet(VALIDATION_RESULT_SLOT, True)]

@@ -1,0 +1,10 @@
+{% extends "action.j2" -%}
+{% block classExtension -%}Restart{% endblock -%}
+{% block initMethod -%}{% endblock -%}
+{% block name %}
+    def name(self):
+        return 'action_restart'
+{% endblock -%}
+{% block runBody -%}
+        return [Restarted()]
+{% endblock -%}

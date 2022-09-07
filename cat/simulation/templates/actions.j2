@@ -1,0 +1,230 @@
+from rasa_sdk import Action, Tracker
+from rasa_sdk.executor import CollectingDispatcher
+from rasa_sdk.forms import FormAction, REQUESTED_SLOT
+from rasa_sdk.events import SlotSet, UserUtteranceReverted, FollowupAction, EventType, Restarted, Form
+from collections import defaultdict
+import copy
+from typing import Any, Dict, Text, List, Optional, Tuple, Callable, Union
+from .db.database import *
+from .db.common import *
+from .db.schema import *
+from .rasa_utils import *
+import logging
+
+logger = logging.getLogger('actions')
+db: PostgreSQLDatabase
+duckling: Duckling
+
+def initialize_endpoints():
+    with open(ENDPOINTS_FILE) as endpoints_file:
+        endpoints = yaml.load(endpoints_file, Loader=yaml.FullLoader)
+        if DATABASE_ENDPOINT_KEY in endpoints.keys():
+            db_args = endpoints[DATABASE_ENDPOINT_KEY]
+            db_host = db_args['host']
+            db_port = db_args['port']
+            db_name = db_args['name']
+            db_schema = db_args['schema']
+            db_user = db_args['user']
+            db_password = db_args['password']
+            global db
+            db = PostgreSQLDatabase.get_instance(host=db_host, port=db_port, db_name=db_name, schema_name=db_schema,
+                                                 user=db_user, password=db_password)
+        else:
+            raise Exception('No database endpoint specified, check you endpoints.yml')
+        if DUCKLING_ENDPOINT_KEY in endpoints.keys():
+            duckling_args = endpoints[DUCKLING_ENDPOINT_KEY]
+            duckling_host = duckling_args['host']
+            duckling_port = duckling_args['port']
+            duckling_https = bool(duckling_args['https'])
+            global duckling
+            duckling = Duckling(host=duckling_host, port=duckling_port, https=duckling_https)
+        else:
+            raise Exception('No duckling endpoint specified, check you endpoints.yml')
+
+
+initialize_endpoints()
+
+{% include 'actionrestart.j2' %}
+{% include 'abstractformaction.j2' %}
+
+{% for action in formActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with requiredSlots = action.requiredSlots -%}
+{% with targetSlots = action.targetSlots -%}
+{% with targetTable = action.targetTable -%}
+{% with targetColumn = action.targetColumn -%}
+{% with targetSlot = action.targetSlot -%}
+{% with joinTables = action.joinTables -%}
+{% with slotMappings = action.slotMappings -%}
+{% include 'formaction.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+
+{% include 'abstractactionproposeoptions.j2' %}
+{% for action in proposeActions %}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with displaySlots = action.displaySlots -%}
+{% with targetTable = action.targetTable -%}
+{% with representation = action.representation -%}
+{% include 'actionproposeoptions.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionsaveoption.j2' %}
+{% for action in saveOptionActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with displaySlots = action.displaySlots -%}
+{% with targetSlot = action.targetSlot -%}
+{% with targetTable = action.targetTable -%}
+{% with setSlots = action.setSlots -%}
+{% with representation = action.representation -%}
+{% include 'actionsaveoption.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionvalidatechoice.j2' %}
+{% for action in validationActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with validationSlot = action.validationSlot -%}
+{% with dataType = action.dataType -%}
+{% include 'actionvalidatechoice.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% for action in transferActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with sourceSlot = action.sourceSlot -%}
+{% with targetSlot = action.targetSlot -%}
+{% include 'actiontransferslot.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionsetboolchoice.j2' %}
+{% for action in boolActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with targetSlot = action.targetSlot -%}
+{% with value = action.value -%}
+{% include 'actionsetboolchoice.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionclear.j2' %}
+
+{% for action in clearActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with clearedSlots = action.clearedSlots -%}
+{% include 'actionclear.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+
+{% include 'abstractactionexecutetransaction.j2' %}
+
+{% for action in executeTransactionActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with transactionName = action.transactionName -%}
+{% with operation = action.operation -%}
+{% with argumentSlots = action.argumentSlots -%}
+{% with returnSlots = action.returnSlots -%}
+{% include 'actionexecutetransaction.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionproposetransaction.j2' %}
+
+{% for action in proposeTransactionActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with transactionName = action.transactionName -%}
+{% with asIsSlots = action.asIsSlots -%}
+{% with resolveSlots = action.resolveSlots -%}
+{% include 'actionproposetransaction.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionsuccesstransaction.j2' %}
+
+{% for action in successTransactionActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with transactionName = action.transactionName -%}
+{% with operation = action.operation -%}
+{% with returnSlots = action.returnSlots -%}
+{% with returnReferences = action.returnReferences -%}
+{% with resultTables = action.resultTables -%}
+{% include 'actionsuccesstransaction.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% include 'abstractactionfailedtransaction.j2' %}
+
+{% for action in failedTransactionActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% with transactionName = action.transactionName -%}
+{% include 'actionfailedtransaction.j2' %}
+{% endwith -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}
+
+{% for action in customActions -%}
+{% with className = action.className -%}
+{% with actionName = action.actionName -%}
+{% include 'action.j2' -%}
+{% endwith -%}
+{% endwith -%}
+{% endfor -%}

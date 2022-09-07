@@ -1,0 +1,15 @@
+<div class="mat-app-background basic-container">
+  <mat-toolbar color="primary">
+    <span>{{ title }}</span>
+    <button mat-button routerLink="/">
+      {{ startTitle }}
+    </button>
+    <button mat-button routerLink="/configuration">
+      {{ configurationTitle }}
+    </button>
+    <!--<button mat-button routerLink="/training">
+      {{ trainingTitle }}
+    </button>-->
+  </mat-toolbar>
+  <router-outlet></router-outlet>
+</div>

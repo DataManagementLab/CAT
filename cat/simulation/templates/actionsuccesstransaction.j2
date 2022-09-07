@@ -1,0 +1,11 @@
+{% extends "action.j2" -%}
+{% block baseClass -%}(AbstractActionSuccessTransaction){% endblock -%}
+{% block init -%}
+        AbstractActionSuccessTransaction.__init__(self, '{{ transactionName }}', '{{ operation }}', {{ returnSlots }}, {{ returnReferences }}, {{ resultTables }})
+{% endblock -%}
+{% block name %}
+    def name(self):
+        return 'action_{{ actionName }}'
+{% endblock -%}
+{% block methods -%}
+{% endblock -%}

@@ -1,0 +1,27 @@
+<mat-form-field class="nl-chip-list-field">
+  <mat-chip-list #nlList [multiple]="false">
+    <mat-chip *ngFor="let nl of target; let i = index"
+              [selectable]="selectable" [removable]="removable"
+              (removed)="removeNL(nl)"
+              (selectionChange)="chipSelectionChange($event)"
+              (click)="chipClicked(nl)">
+      {{nl}}
+      <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+    <input placeholder="{{placeholder}}"
+           #chipInput
+           [matAutocomplete]="auto"
+           [matChipInputFor]="nlList"
+           [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+           [matChipInputAddOnBlur]="addOnBlur"
+           (matChipInputTokenEnd)="add($event)"
+           (input)="onManualInput()">
+  </mat-chip-list>
+  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSynonymSelected($event)">
+    <mat-optgroup *ngFor="let synset of availableSynonyms | async" [label]="displaySynonymGroup(synset)">
+      <mat-option *ngFor="let lemma of synset.lemmas" [value]="lemma">
+        {{lemma}}
+      </mat-option>
+    </mat-optgroup>
+  </mat-autocomplete>
+</mat-form-field>

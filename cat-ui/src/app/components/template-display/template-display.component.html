@@ -1,0 +1,6 @@
+<mat-chip-list></mat-chip-list>
+<ng-container *ngFor="let text of templateParts; let i = index;">
+  <span class="template-text" *ngIf="i % 2 === 0 && text.length > 0">{{text}}</span>
+  <mat-chip disableRipple="false" selectable="false" [color]="chipColor" class="template-chip"
+            *ngIf="i % 2 === 1 && text.length > 0">{{text}}</mat-chip>
+</ng-container>

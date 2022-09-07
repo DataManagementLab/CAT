@@ -1,0 +1,19 @@
+class AbstractActionSetBoolChoice(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self,
+                slot_name: str,
+                value: bool):
+        self.slot_name = slot_name
+        self.value = value
+        Action.__init__(self)
+
+    def name(self):
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        return [set_serialized_slot(self.slot_name, self.value)]

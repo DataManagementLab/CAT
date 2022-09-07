@@ -1,0 +1,17 @@
+class AbstractActionClear(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self, slots: List[str]):
+        self.slots = slots
+        Action.__init__(self)
+
+    def name(self) -> Text:
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]
+    ) -> List[Dict[Text, Any]]:
+        return [SlotSet(RESULT_SLOT, None), SlotSet(REQUESTED_SLOT, None), SlotSet(VALIDATION_RESULT_SLOT, None)] + [SlotSet(s, None) for s in self.slots]

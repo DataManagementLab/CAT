@@ -1,0 +1,26 @@
+form {
+  margin-left: 15px;
+}
+
+.mat-form-field {
+  margin: 1px;
+}
+
+.status-wrapper {
+  margin-left: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.icon-connected {
+  color: #00C853;
+  margin: 1px;
+}
+
+.icon-error {
+  color: #B00020;
+}
+
+.test-connection-button {
+  margin-right: 5px;
+}

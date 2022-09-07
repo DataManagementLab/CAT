@@ -1,0 +1,19 @@
+
+class Action{% block classExtension -%}{{ className }}{% endblock -%}{% block baseClass -%}(Action){% endblock -%}:
+    {% block initMethod -%}
+    def __init__(self):
+        {% block init -%}
+        Action.__init__(self)
+        {% endblock -%}{% endblock -%}
+    {% block name %}
+    def name(self):
+        return 'action_{{ actionName }}'
+    {% endblock -%}
+    {% block methods -%}
+    {% block runMethod %}
+    def run(self, dispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        {% block runBody %}return{% endblock %}
+    {% endblock -%}
+    {% block additionalMethods-%}
+    {% endblock -%}
+    {% endblock -%}

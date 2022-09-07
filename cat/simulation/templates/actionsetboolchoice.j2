@@ -1,0 +1,11 @@
+{% extends "action.j2" -%}
+{% block baseClass -%}(AbstractActionSetBoolChoice){% endblock -%}
+{% block init -%}
+        AbstractActionSetBoolChoice.__init__(self, '{{ targetSlot }}', {{ value }})
+{% endblock -%}
+{% block name %}
+    def name(self):
+        return 'action_{{ actionName }}'
+{% endblock -%}
+{% block runMethod -%}
+{% endblock -%}

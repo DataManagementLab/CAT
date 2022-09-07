@@ -1,0 +1,79 @@
+<mat-expansion-panel id="procedure-{{id}}" class="procedure-panel" [expanded]="id===step" (opened)="openStep()">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <h3>{{procedure.name}}</h3>
+    </mat-panel-title>
+    <mat-panel-description>
+      <mat-chip class="panel-title-chip" [disableRipple]="true" [disabled]="true">
+        <mat-icon class="panel-title-chip-icon">redo</mat-icon>
+        {{procedure.parameters.length}} Parameters
+      </mat-chip>
+      <mat-chip class="panel-title-chip" [disableRipple]="true" [disabled]="true">
+        <mat-icon class="panel-title-chip-icon">undo</mat-icon>
+        {{procedure.returns ? 'Has' : 'No'}} return value
+      </mat-chip>
+    </mat-panel-description>
+    <div class="mat-expansion-panel-button-container">
+      <button mat-raised-button (click)="openBody($event)" [color]="'primary'">&lt;/&gt;</button>
+    </div>
+  </mat-expansion-panel-header>
+
+  <ng-template matExpansionPanelContent class="procedure-panel-content">
+    <!-- Natural language expressions -->
+    <h4>Natural language expressions</h4>
+    <app-pair-chip-list [(target)]="procedure.nlPairs" (targetChange)="phraseExample()"></app-pair-chip-list>
+
+    <mat-form-field class="procedure-phrasing-input" [hintLabel]="'Example phrasing'">
+      <input matInput [placeholder]="examplePhrasing" [disabled]="true">
+    </mat-form-field>
+    <button mat-icon-button (click)="phraseExample()" [disabled]="!procedure.nlPairs || procedure.nlPairs.length===0">
+      <mat-icon>autorenew</mat-icon>
+    </button>
+
+    <!-- TODO Natural language expression from sample -->
+    <!--<h4>Sample from column</h4>
+    <app-entity-sample [(predicates)]="procedure.nlSample.predicates"
+                       [(tableName)]="procedure.nlSample.tableName"
+                       [(columnName)]="procedure.nlSample.columnName"
+                       [(parameterName)]="procedure.nlSample.parameterName"
+                       [selectedParameter]="getSampleEntityParameter()"
+                       [selectedTable]="getSampleEntityTable()"
+                       [selectedColumn]="getSampleEntityColumn()"
+                       [parameters]="procedure.parameters"
+                       [tables]="tables"></app-entity-sample> -->
+
+    <!-- Parameters -->
+    <h3>Parameters</h3>
+    <mat-tab-group [(selectedIndex)]="paramTab">
+      <mat-tab *ngFor="let param of procedure.parameters; let i = index" [label]="param.name">
+        <app-argument [argument]="param" [id]=i [(tab)]="paramTab" [first]="i===0"
+                       [last]="i===procedure.parameters.length-1" [tables]="tables"
+                       [selectedTable]="getTableReference(param)"
+                       [selectedColumn]="getColumnReference(param)"></app-argument>
+      </mat-tab>
+    </mat-tab-group>
+
+    <!-- Return value -->
+    <div *ngIf="procedure.operation==='select'">
+      <h3>Return record</h3>
+      <span class="return-record-title">{{procedure.returns.name | uppercase}}
+        ({{procedure.returns.values | join:'dataType' | uppercase}})</span>
+      <app-synonym-chip-list [(target)]="procedure.returns.nlExpressions"></app-synonym-chip-list>
+
+      <h4>Record components</h4>
+      <mat-tab-group [(selectedIndex)]="returnValueTab">
+        <mat-tab *ngFor="let returnValue of procedure.returns.values; let i = index" [label]="returnValue.name">
+          <app-argument [argument]="returnValue" [id]=i [(tab)]="returnValueTab" [first]="i===0"
+                        [last]="i===procedure.returns.values.length-1" [tables]="tables"
+                        [selectedTable]="getTableReference(returnValue)"
+                        [selectedColumn]="getColumnReference(returnValue)"></app-argument>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
+  </ng-template>
+  <mat-action-row>
+    <button mat-button *ngIf="!first" (click)="previousStep()">Previous procedure</button>
+    <button mat-button *ngIf="!last" (click)="nextStep()">Next procedure</button>
+  </mat-action-row>
+</mat-expansion-panel>

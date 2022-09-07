@@ -1,0 +1,58 @@
+class AbstractActionSuccessTransaction(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self,
+                transaction_name: str,
+                operation: str,
+                return_slots: List[str],
+                return_references: Dict[str, str],
+                result_tables: List[str]):
+        self.transaction_name = transaction_name
+        self.operation = operation
+        self.return_slots = return_slots
+        self.return_references = return_references
+        self.result_tables = result_tables
+        Action.__init__(self)
+
+    def name(self):
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]
+            ) -> List[Dict[Text, Any]]:
+        if self.operation == OPERATION_SELECT:
+            results = get_deserialized_slot(tracker, TRANSACTION_RESULT_SLOT)
+            if not results:
+                dispatcher.utter_message(text='There are no results for your request')
+                return []
+            resolved_results = []
+            for res in results:
+                resolved_result = {}
+                for return_slot in self.return_slots:
+                    constraints = defaultdict(dict)
+                    return_arg = return_slot.replace(f'{self.transaction_name}__', '')
+                    if return_slot not in self.return_references.keys() or self.return_references[return_slot] is None:
+                        continue
+                    table, column = slot_to_table_column(self.return_references[return_slot])
+                    if table and column:
+                        constraints[table][column] = [db.build_constraint([res[return_arg]])]
+                    additional_tables = db.get_join_tables(table_name=table, directed=True)
+                    resolved = db.select(target_table_alias=table, additional_tables=additional_tables, constraints=constraints, limit=1)
+                    resolved_result.update(resolved)
+                # add the original slot values
+                resolved_result.update(dict([(f'{self.transaction_name}__{key}', value) for key, value in res.items()]))
+                resolved_results.append(resolved_result)
+            for res in resolved_results:
+                template = random.choice(domain['responses'][f'action_success_transaction_{self.transaction_name}'])[
+                    'text']
+                placeholders = get_placeholders(template)
+                replacement_values = dict(
+                    [(slot, to_human_readable(val)) for slot, val in res.items() if slot in placeholders])
+                message = template.format(**replacement_values)
+                dispatcher.utter_message(text=message)
+        else:
+            dispatcher.utter_message(template=f'action_success_transaction_{self.transaction_name}')
+        return []

@@ -1,0 +1,26 @@
+<mat-expansion-panel id="response-{{id}}" class="template-panel" [expanded]="id===step" (opened)="openStep()">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <h3>
+        <span matBadge="{{templateable.templates.length}}" matBadgeOverlap="false">{{templateable.name}}</span>
+      </h3>
+    </mat-panel-title>
+    <mat-panel-description></mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <ng-template matExpansionPanelContent class="template-panel-content">
+    <mat-list>
+      <mat-list-item class="template-list-item" *ngFor="let template of templateable.templates">
+        <button mat-icon-button (click)="deleteTemplate(template)">
+          <mat-icon>delete</mat-icon>
+        </button>
+        <app-template-display [template]="template"></app-template-display>
+      </mat-list-item>
+    </mat-list>
+    <mat-action-row>
+      <button mat-button mat-raised-button color="primary" (click)="openTemplateDialog()">Add template</button>
+      <button mat-button *ngIf="!first" (click)="previousStep()">Previous response</button>
+      <button mat-button *ngIf="!last" (click)="nextStep()">Next response</button>
+    </mat-action-row>
+  </ng-template>
+</mat-expansion-panel>

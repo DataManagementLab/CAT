@@ -1,0 +1,29 @@
+.table-panel {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.mat-expansion-panel-header-title {
+  flex-basis: 0;
+}
+
+.mat-expansion-panel-header-title > h3 {
+  font-weight: 700;
+}
+
+.mat-expansion-panel-header-description {
+  flex-basis: 0;
+  align-items: center;
+}
+
+.table-pk-icon {
+  margin-right: 10px;
+}
+
+.table-panel-content {
+  margin: 10px;
+}
+
+.mat-chip-disabled.panel-title-chip {
+  opacity: 1;
+}

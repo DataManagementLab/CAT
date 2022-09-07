@@ -1,0 +1,17 @@
+.mat-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.lookup-chip-input {
+  width: 90%;
+}
+
+.column-flex-row {
+  display: flex;
+  flex-direction: row;
+}

@@ -1,0 +1,18 @@
+version: "3"
+services:
+  training:
+    container_name: tcb_dialog_simulation
+    image: tcb/tcb-conda:latest
+    depends_on:
+      - db
+    environment:
+      - NUM_STORIES=100
+      - TESTBOT=true
+      - CONFIG=testbot/config.yml
+      - DOMAIN=testbot/domain.yml
+      - DATA_DIR=testbot/data
+    volumes:
+      - /data/tcb/server:/tcb
+      - /data/tcb/training_data:/tcb/data/bots
+    working_dir: /tcb
+    command: ./run_simulation.sh

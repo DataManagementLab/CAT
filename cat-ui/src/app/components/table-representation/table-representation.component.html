@@ -1,0 +1,12 @@
+<h5>Preview</h5>
+<app-template-display class="representation-preview-field" [template]="table.representation"></app-template-display>
+<h5>Enter text and column placeholders</h5>
+<mat-form-field class="representation-input-field">
+<textarea matInput cdkTextareaAutosize type="text" [(ngModel)]="table.representation"></textarea>
+</mat-form-field>
+<h5>Available Columns</h5>
+<mat-chip-list>
+  <mat-chip *ngFor="let column of table.columns" selectable="false" color="primary" (click)="addPlaceholder(column.name)">
+    {{column.name}}
+  </mat-chip>
+</mat-chip-list>

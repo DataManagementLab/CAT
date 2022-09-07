@@ -1,0 +1,8 @@
+<h1 mat-dialog-title>{{data.title}}</h1>
+<div mat-dialog-content>
+  <pre [innerHTML]="data.data">
+  </pre>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-raised-button [color]="'primary'" (click)="closeDialog()">Close</button>
+</div>

@@ -1,0 +1,16 @@
+version: "3"
+services:
+  training:
+    container_name: tcb_dialog_simulation
+    image: tcb/tcb-conda:latest
+    depends_on:
+      - db
+    environment:
+      - BOTNAME=testbot
+    volumes:
+      - ~/data/tcb/server:/tcb
+      - ~/data/tcb/training_data:/tcb/data/bots
+    working_dir: /tcb
+    command: ./run_training.sh
+    networks:
+      - backend

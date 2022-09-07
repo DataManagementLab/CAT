@@ -1,0 +1,14 @@
+.response-panel {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.response-panel-content {
+  margin: 10px;
+}
+
+.template-list-item {
+  height: auto !important;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}

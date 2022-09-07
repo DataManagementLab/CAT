@@ -1,0 +1,8 @@
+frontend
+logs
+data
+experimental
+resources
+tests
+.gitignore
+.git

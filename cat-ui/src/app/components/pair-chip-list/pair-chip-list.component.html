@@ -1,0 +1,52 @@
+<form #f="ngForm" [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+
+  <mat-form-field class="pair-form-field">
+    <input #predicateInput matInput
+           [matAutocomplete]="predicateAuto"
+           [placeholder]="'Predicate'"
+           [formControlName]="'predicate'"
+           (input)="onManualInput()">
+    <mat-error>Please provide a predicate for the expression</mat-error>
+  </mat-form-field>
+
+  <mat-form-field class="pair-form-field">
+    <input #argumentInput matInput
+           [matAutocomplete]="argumentAuto"
+           [placeholder]="'Argument'"
+           [formControlName]="'argument'"
+           (input)="onManualInput()">
+    <mat-error>Please provide an argument for the expression</mat-error>
+  </mat-form-field>
+  <button mat-button type="submit" [disabled]="f.invalid||!predicateInput.value||!argumentInput.value">Add pair</button>
+</form>
+
+<mat-form-field class="chip-list-field">
+  <mat-chip-list #chipList [multiple]="false">
+    <mat-chip *ngFor="let pair of target"
+              [selectable]="selectable"
+              [removable]="removable"
+              (removed)="removePair(pair)"
+              (selectionChange)="chipSelectionChange($event)"
+              (click)="chipClicked(pair)">
+      {{pair.predicate}} {{pair.argument}}
+      <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+  </mat-chip-list>
+
+  <mat-autocomplete #predicateAuto="matAutocomplete" (optionSelected)="onPredicateSynonymSelected($event)">
+    <mat-optgroup *ngFor="let synset of availablePredicateSynonyms | async" [label]="displaySynonymGroup(synset)">
+      <mat-option *ngFor="let lemma of synset.lemmas" [value]="lemma">
+        {{lemma}}
+      </mat-option>
+    </mat-optgroup>
+  </mat-autocomplete>
+
+  <mat-autocomplete #argumentAuto="matAutocomplete" (optionSelected)="onArgumentSynonymSelected($event)">
+    <mat-optgroup *ngFor="let synset of availableArgumentSynonyms | async" [label]="displaySynonymGroup(synset)">
+      <mat-option *ngFor="let lemma of synset.lemmas" [value]="lemma">
+        {{lemma}}
+      </mat-option>
+    </mat-optgroup>
+  </mat-autocomplete>
+
+</mat-form-field>

@@ -1,0 +1,133 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Templating</mat-card-title>
+    <mat-card-subtitle>Configure tasks create templates for phrasing intents with entities and response templates
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <!-- Stepper -->
+    <mat-vertical-stepper [linear]="true" #stepper>
+      <ng-template matStepperIcon="edit">
+        <mat-icon>done</mat-icon>
+      </ng-template>
+      <!-- Task generation step -->
+      <mat-step [completed]="tasksComplete">
+        <ng-template matStepLabel>Task generation</ng-template>
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Task generation</mat-card-title>
+            <mat-card-subtitle>
+              Generate tasks from your procedure and table configuration that should be used to simulate dialogs
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="mat-card-content-button">
+            <button class="mat-card-content-button" mat-raised-button [color]="'primary'" (click)="generateTasks()">
+              Generate tasks
+            </button>
+            <app-download-button class="mat-card-content-button" [fileName]="'tasks'"
+                                 [fileExt]="'json'"
+                                 [buttonRaised]="true"
+                                 [buttonText]="'Download tasks'"
+                                 [icon]="'get_app'"
+                                 [type]="'text/json'"
+                                 [data]="getJSONTasks()"
+                                 [disabled]="!tasksComplete">
+            </app-download-button>
+            <button class="mat-card-content-button" mat-raised-button [color]="'primary'" [disabled]="!tasksComplete"
+                    (click)="openTasks()">
+              <mat-icon>open_in_browser</mat-icon>
+              Show tasks
+            </button>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button matStepperNext [disabled]="!tasksComplete">Next</button>
+          </mat-card-actions>
+        </mat-card>
+      </mat-step>
+      <!--Response template step -->
+      <mat-step>
+        <ng-template matStepLabel>Response template configuration</ng-template>
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Responses</mat-card-title>
+            <mat-card-subtitle>Add utterance templates that are used by the bots responses to communicate with the user</mat-card-subtitle>
+            <app-upload-button class="title-button"
+                               [icon]="'attach_file'"
+                               [buttonText]="'Upload templates'"
+                               [buttonRaised]="true"
+                               [accept]="'application/json, .json'"
+                               (filesChange)="importTemplatesFile($event)">
+            </app-upload-button>
+            <app-download-button class="title-button" [fileName]="'templates'"
+                                 [fileExt]="'json'"
+                                 [buttonRaised]="true"
+                                 [buttonText]="'Download templates'"
+                                 [icon]="'get_app'"
+                                 [type]="'text/json'"
+                                 [data]="getJSONTemplates()"
+                                 [disabled]="!tasksComplete">
+            </app-download-button>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-accordion [displayMode]="'flat'">
+              <app-template *ngFor="let response of responses; let i = index" [templateable]="response"
+                            [id]="i" [(step)]="actionStep" [first]="i===0" [last]="i===responses.length-1"></app-template>
+            </mat-accordion>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button matStepperPrevious>Back</button>
+            <button mat-button matStepperNext>Next</button>
+          </mat-card-actions>
+        </mat-card>
+      </mat-step>
+      <!--IntentTemplate template step -->
+      <mat-step>
+        <ng-template matStepLabel>Intent template configuration</ng-template>
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Intents</mat-card-title>
+            <mat-card-subtitle>Add intent templates that are used to generate training data for the Natural Language understanding</mat-card-subtitle>
+            <app-upload-button class="title-button"
+                               [icon]="'attach_file'"
+                               [buttonText]="'Upload templates'"
+                               [buttonRaised]="true"
+                               [accept]="'application/json, .json'"
+                               (filesChange)="importTemplatesFile($event)">
+            </app-upload-button>
+            <app-download-button class="title-button" [fileName]="'templates'"
+                                 [fileExt]="'json'"
+                                 [buttonRaised]="true"
+                                 [buttonText]="'Download templates'"
+                                 [icon]="'get_app'"
+                                 [type]="'text/json'"
+                                 [data]="getJSONTemplates()"
+                                 [disabled]="!tasksComplete">
+            </app-download-button>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-accordion [displayMode]="'flat'">
+              <app-template *ngFor="let intent of intents; let i = index" [templateable]="intent"
+                          [id]="i" [(step)]="intentStep" [first]="i===0" [last]="i===intents.length-1"></app-template>
+            </mat-accordion>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button matStepperPrevious>Back</button>
+          </mat-card-actions>
+        </mat-card>
+      </mat-step>
+    </mat-vertical-stepper>
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <button mat-button matStepperPrevious>Back</button>
+    <!--<button mat-raised-button matStepperNext color="primary" [disabled]="!tasksComplete">Next</button>-->
+    <app-download-button class="mat-card-content-button" [fileName]="'configs'"
+                         [fileExt]="'zip'"
+                         [buttonRaised]="true"
+                         [buttonText]="'Download configurations'"
+                         [icon]="'get_app'"
+                         [type]="'application/zip'"
+                         [data]="getConfigs()"
+                         [disabled]="!tasksComplete">
+    </app-download-button>
+  </mat-card-actions>
+</mat-card>

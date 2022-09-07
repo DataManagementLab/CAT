@@ -1,0 +1,17 @@
+class AbstractActionFailedTransaction(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self, transaction_name: str):
+        self.transaction_name = transaction_name
+
+    def name(self):
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]
+            ) -> List[Dict[Text, Any]]:
+        dispatcher.utter_message(template=f'action_failed_transaction_{self.transaction_name}', **tracker.slots)
+        return []

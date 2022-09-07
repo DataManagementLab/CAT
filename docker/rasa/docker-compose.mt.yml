@@ -1,0 +1,40 @@
+version: '3'
+services:
+  rasa:
+    image: rasa/rasa:latest-full
+    container_name: rasa_server
+    networks:
+      - rasa
+    ports:
+      - 5005:5005
+    volumes:
+      - ./rasa-data/:/app/
+    command:
+      - run
+
+  action_server:
+    image: rasa/rasa-sdk:latest
+    container_name: rasa_action_server
+    ports:
+      - 5055:5055
+    environment:
+      - DB_HOST: localhost
+      - DB_PORT: 5432
+      - DB_NAME: tcb
+      - DB_SCHEMA: movie_theatre
+      - DB_USER: tcb
+      - DB_PASSWORD: tcb
+    volumes:
+      - ./rasa-data/actions:/app/actions
+    networks:
+      - rasa
+
+  duckling:
+    image: rasa/duckling:latest
+    networks:
+      - rasa
+    ports:
+      - 8000:8000
+
+networks:
+  rasa:

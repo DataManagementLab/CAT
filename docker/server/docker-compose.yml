@@ -1,0 +1,65 @@
+version: "3"
+services:
+  db:
+    image: postgres:latest
+    container_name: tcb_db
+    restart: always
+    ports:
+      - "5440:5432"
+    environment:
+      - POSTGRES_DB=tcb
+      - POSTGRES_USER=tcb
+      - POSTGRES_PASSWORD=tcb
+      - SETUP_STORED_PROCEDURES=true
+      - SETUP_SCHEMA=tpcc
+    volumes:
+      - /data/tcb/postgres:/var/lib/postgresql/data
+      - /data/tcb/server/setup/tpcc/create_stored_procedures.sh:/docker-entrypoint-initdb.d/create_stored_procedures.sh
+      - /data/tcb/server/setup/tpcc/stored_procedures.sql:/docker-entrypoint-initdb.d/stored_procedures.sql
+    networks:
+      - backend
+  server:
+    image: tcb/tcb-conda:latest
+    container_name: tcb_server
+    restart: always
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - SETUP_DB=false
+      - SETUP_DB_HOST=db
+      - SETUP_DB_PORT=5432
+      - SETUP_DB_NAME=tcb
+      - SETUP_DB_USER=tcb
+      - SETUP_DB_PASSWORD=tcb
+      - SETUP_DB_SCHEMA=tpcc
+      - HOST=0.0.0.0
+      - SOCKETIO_PORT=5000
+      - REST_PORT=5001
+      - JWT_SECRET=b3p/!QNMN/Cg>q
+      - JWT_PASSPHRASE=[YLx}>UgeVsPpvs?t(gjLfE+ghbBaVE)YxK
+      - DEBUG=true
+      - CORS_ALLOWED_ORIGINS='*'
+    volumes:
+      - ~/data/tcb/server:/tcb
+    working_dir: /tcb
+    command: ./run.sh
+    networks:
+      - backend
+      - frontend
+  ui:
+    image: nginx:latest
+    container_name: tcb_ui
+    restart: always
+    ports:
+      - "4200:80"
+    volumes:~
+      - /data/tcb/ui/.htpasswd:/etc/nginx/.htpasswd
+      - /data/tcb/ui/dist:/tcb
+      - /data/tcb/ui/tcb.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - frontend
+
+networks:
+  backend:
+  frontend:

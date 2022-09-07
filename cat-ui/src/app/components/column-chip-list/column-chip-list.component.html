@@ -1,0 +1,22 @@
+<mat-form-field class="column-chip-list-field">
+  <mat-chip-list #columnList [multiple]="false">
+    <mat-chip *ngFor="let columnName of target; let i = index"
+              [selectable]="false" [removable]="removable"
+              (removed)="removeColumn(columnName)">
+      {{columnName}}
+      <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+    <input placeholder="{{placeholder}}"
+           #chipInput
+           [matAutocomplete]="auto"
+           [matChipInputFor]="columnList"
+           [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+           [matChipInputAddOnBlur]="addOnBlur"
+           (matChipInputTokenEnd)="add($event)">
+  </mat-chip-list>
+  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onColumnSelected($event)">
+      <mat-option *ngFor="let column of columns" [value]="column">
+        {{column.name}}
+      </mat-option>
+  </mat-autocomplete>
+</mat-form-field>

@@ -1,0 +1,7 @@
+<button mat-button
+        (click)="downloadData()"
+        [disabled]="disabled"
+        [ngClass]="{'mat-raised-button': buttonRaised, 'mat-primary': buttonRaised}">
+  <mat-icon *ngIf="icon" [color]="buttonRaised?'#fff':iconColor">{{icon}}</mat-icon>
+  {{buttonText}}
+</button>

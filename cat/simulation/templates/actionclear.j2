@@ -1,0 +1,11 @@
+{% extends "action.j2" -%}
+{% block baseClass -%}(AbstractActionClear){% endblock -%}
+{% block init -%}
+        AbstractActionClear.__init__(self, {{ clearedSlots }})
+{% endblock -%}
+{% block name %}
+    def name(self):
+        return 'action_{{ actionName }}'
+{% endblock -%}
+{% block runMethod -%}
+{% endblock -%}

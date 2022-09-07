@@ -1,0 +1,49 @@
+class AbstractActionSaveOption(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self,
+                 target_slot: str,
+                 target_table: str,
+                 display_slots: List[str],
+                 set_slots: List[str],
+                 representation: str):
+        self.display_slots = display_slots
+        self.target_slot = target_slot
+        self.target_table = target_table
+        self.set_slots = set_slots
+        self.representation = representation
+        Action.__init__(self)
+
+    def name(self):
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        results = get_deserialized_slot(tracker, RESULT_SLOT)
+        result_offset = tracker.get_slot(RESULT_OFFSET_SLOT)
+        if len(results) == 1 and get_latest_intent(tracker) == INTENT_AFFIRM:
+            choice = 1
+        else:
+            user_choice = tracker.get_slot(RESULT_CHOICE_SLOT)
+            if user_choice is None:
+                logger.error('User choice is None')
+                dispatcher.utter_message('You did not select a choice')
+                return [UserUtteranceReverted()]
+            if not isinstance(user_choice, int):
+                choice, _ = duckling.parse_numeric(str(user_choice))
+                choice = int(choice)
+            else:
+                choice = user_choice
+
+        result_idx = result_offset + (choice - 1)
+        result = results[result_idx]
+
+        replacement_values = dict([(slot_to_column(key), to_human_readable(value))
+                                   for key, value in result.items()
+                                   if slot_to_column(key) in get_placeholders(self.representation)])
+        # result_repr = self.representation.format(**replacement_values)
+        # dispatcher.utter_message(f'Okay setting {result_repr} as your choice')
+        return [set_serialized_slot(slot, value) for slot, value in result.items() if slot == self.target_slot or slot in self.set_slots]

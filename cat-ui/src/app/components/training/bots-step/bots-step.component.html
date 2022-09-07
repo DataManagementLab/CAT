@@ -1,0 +1,82 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>
+      Training configuration
+    </mat-card-title>
+    <mat-card-subtitle>
+      Select a bot and adapt the training configuration
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-vertical-stepper [linear]="true" #stepper>
+      <ng-template matStepperIcon="edit">
+        <mat-icon>done</mat-icon>
+      </ng-template>
+      <!-- bot selection -->
+      <mat-step [completed]="!!selectedBot">
+        <ng-template matStepLabel>Bot selection</ng-template>
+        <mat-card>
+          <mat-card-header>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-form-field>
+              <mat-select [(ngModel)]="selectedBot"
+                          (ngModelChange)="onBotChange($event)" placeholder="Select a bot">
+                <mat-optgroup *ngFor="let date of optionGroups" [label]="date.format('d. MMM YY')">
+                  <mat-option *ngFor="let bot of filterCreatedDate(bots, date)" [value]="bot">
+                    {{bot.name}} ({{ (bot.created | moment).format('hh:mm a') }})
+                  </mat-option>
+                </mat-optgroup>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <input type="number" placeholder="Number of stories" matInput [value]="stories.length" disabled/>
+            </mat-form-field>
+            <button mat-raised-button (click)="showStories()" [color]="'primary'" [disabled]="stories.length == 0">
+              Show stories
+            </button>
+            <div class="bot-domain" *ngIf="selectedBot && botDomain">
+              <h3>Bot domain</h3>
+              <mat-form-field>
+                <input type="number" placeholder="Number of intents" matInput [value]="botDomain.intents.length" disabled/>
+              </mat-form-field>
+              <mat-form-field>
+                <input type="number" placeholder="Number of responses" matInput [value]="botDomain.actions.length" disabled/>
+              </mat-form-field>
+              <mat-form-field>
+                <input type="number" placeholder="Number of entities" matInput [value]="botDomain.entities.length" disabled/>
+              </mat-form-field>
+              <mat-form-field>
+                <input type="number" placeholder="Number of slots" matInput [value]="botDomain.slots.length" disabled/>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button matStepperNext [disabled]="!selectedBot">Next</button>
+          </mat-card-actions>
+        </mat-card>
+      </mat-step>
+      <!-- Config -->
+      <mat-step [completed]="">
+        <ng-template matStepLabel>Model configuration</ng-template>
+        <mat-card>
+          <mat-card-header>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="bot-config" *ngIf="selectedBot && botConfig">
+              <!-- TODO -->
+            </div>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button matStepperPrevious>Back</button>
+            <button mat-button matStepperNext [disabled]="">Next</button>
+          </mat-card-actions>
+        </mat-card>
+      </mat-step>
+
+    </mat-vertical-stepper>
+  </mat-card-content>
+  <mat-card-actions>
+
+  </mat-card-actions>
+</mat-card>

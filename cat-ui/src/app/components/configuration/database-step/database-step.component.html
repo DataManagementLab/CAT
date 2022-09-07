@@ -1,0 +1,62 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Database connection parameters</mat-card-title>
+    <mat-card-subtitle>Please provide credentials for the (PostgreSQL) database and schema you want to connect to.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="database-form" [formGroup]="formGroupDatabase" autocomplete="on" completed="completed">
+      <div>
+        <mat-form-field>
+          <input matInput type="text" placeholder="Hostname/IP address" formControlName="hostname" required>
+          <mat-error *ngIf="formGroupDatabase.get('hostname').hasError('pattern')">Invalid hostname or IP address
+          </mat-error>
+          <mat-error *ngIf="formGroupDatabase.get('hostname').hasError('required')">Hostname or IP address required
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field>
+          <input matInput type="number" placeholder="Port" formControlName="port" required>
+          <mat-error *ngIf="formGroupDatabase.get('port').hasError('min')">Port number must at least be 0</mat-error>
+          <mat-error *ngIf="formGroupDatabase.get('port').hasError('max')">Highest portnumber is 65535</mat-error>
+          <mat-error *ngIf="formGroupDatabase.get('port').hasError('required')">Port number is required</mat-error>
+        </mat-form-field>
+      </div>
+      <div>
+        <mat-form-field>
+          <input matInput type="text" placeholder="Username" formControlName="username" autocomplete="username"
+                 required>
+          <mat-error>Username is required</mat-error>
+        </mat-form-field>
+        <mat-form-field>
+          <input matInput type="password" placeholder="Password" formControlName="password"
+                 autocomplete="current-password"
+                 required>
+          <mat-error>Password is required</mat-error>
+        </mat-form-field>
+      </div>
+      <div>
+        <mat-form-field>
+          <input matInput type="text" placeholder="Database name" formControlName="databaseName" required>
+          <mat-error>Database name is required</mat-error>
+        </mat-form-field>
+        <mat-form-field>
+          <input matInput type="text" placeholder="Schema name" formControlName="schemaName" required>
+          <mat-error>Schema name is required</mat-error>
+        </mat-form-field>
+      </div>
+    </form>
+    <div class="status-wrapper">
+      <button mat-raised-button [color]="'primary'" (click)="testConnection()" class="test-connection-button">
+        <mat-icon>sync_alt</mat-icon>
+        Connect
+      </button>
+      <mat-spinner class="spinner-connecting" *ngIf="connecting" [diameter]="20"></mat-spinner>
+      <mat-icon class="icon-connected" *ngIf="completed">check_circle</mat-icon>
+      <mat-icon class="icon-error" *ngIf="error">cancel</mat-icon>
+    </div>
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <button mat-button matStepperPrevious>Back</button>
+    <button mat-button matStepperNext disabled="{{!completed}}">Next</button>
+  </mat-card-actions>
+</mat-card>

@@ -1,0 +1,14 @@
+<h1 mat-dialog-title>{{data.title}}</h1>
+<h3 mat-dialog-title class="warning-dialog-subtitle">{{data.question}}</h3>
+<div mat-dialog-content>
+  <mat-list *ngIf="data.contents && data.contents.length > 0">
+    <mat-list-item *ngFor="let warning of data.contents">
+      <mat-icon mat-list-icon>warning</mat-icon>
+      {{warning}}
+    </mat-list-item>
+  </mat-list>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="false" cdkFocusInitial>No</button>
+  <button mat-raised-button [color]="'warn'" [mat-dialog-close]="true">Yes</button>
+</div>

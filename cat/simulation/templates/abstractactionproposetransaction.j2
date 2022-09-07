@@ -1,0 +1,41 @@
+class AbstractActionProposeTransaction(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self,
+                 transaction_name: str,
+                 as_is_slots: List[str],
+                 resolve_slots: Dict[str, str]):
+        self.transaction_name = transaction_name
+        self.as_is_slots = as_is_slots
+        self.resolve_slots = resolve_slots
+        Action.__init__(self)
+
+    def name(self) -> Text:
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]
+            ) -> List[Dict[Text, Any]]:
+        responses = domain['responses'][f'action_propose_transaction_{self.transaction_name}']
+        template = random.choice(responses)['text']
+        placeholders = get_placeholders(template)
+
+        replacement_values = dict(
+            [(slot, get_deserialized_slot(tracker, slot)) for slot in self.as_is_slots if slot in placeholders])
+
+        for slot, table_column in self.resolve_slots.items():
+            table, column = slot_to_table_column(table_column)
+            constraints = {table: {column: [db.build_constraint([tracker.get_slot(slot)])]}}
+            join_tables = list(set([slot_to_table(p) for p in placeholders]))
+            resolved = db.select(target_table_alias=table, additional_tables=join_tables, constraints=constraints, distinct_on_target=column)
+            if len(resolved) > 0:
+                replacement_values.update(dict(
+                    [(slot, to_human_readable(value)) for slot, value in resolved[0].items() if slot in placeholders])
+                )
+
+        message = template.format(**replacement_values)
+        dispatcher.utter_message(text=message)
+        return []

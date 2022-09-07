@@ -1,0 +1,13 @@
+.mat-card-content-button {
+  margin: 4px;
+}
+
+.simulation-status {
+  margin: 5px;
+}
+
+.progress-hint {
+  float: right;
+  font-size: 10.5px;
+  margin-top: .54167em;
+}

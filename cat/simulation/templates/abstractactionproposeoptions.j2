@@ -1,0 +1,52 @@
+class AbstractActionProposeOptions(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self,
+                 target_table: str,
+                 display_slots: List[str],
+                 representation: str):
+        self.target_table = target_table
+        self.display_slots = display_slots
+        self.representation = representation.replace('(', '[').replace(')', ']')
+        Action.__init__(self)
+
+    def name(self) -> Text:
+        pass
+
+    def run(self,
+            dispatcher: "CollectingDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]
+            ) -> List[Dict[Text, Any]]:
+        results = get_deserialized_slot(tracker, RESULT_SLOT)
+        result_offset = tracker.get_slot(RESULT_OFFSET_SLOT)
+        last_intent = get_latest_intent(tracker)
+        if last_intent == INTENT_MORE_OPTIONS:
+            result_offset += MAX_PROPOSE_OPTIONS
+        elif last_intent == INTENT_PREVIOUS_OPTIONS:
+            result_offset -= MAX_PROPOSE_OPTIONS
+
+        if len(results) == 1:
+            if last_intent == INTENT_AFFIRM:
+                return [SlotSet(RESULT_CHOICE_SLOT, 1), SlotSet(RESULT_OFFSET_SLOT, 0)]
+            dispatcher.utter_message(template=f'action_propose_{self.target_table}', **results[0])
+            return []
+        else:
+            message = f'Here are the {self.target_table}s i found'
+            buttons = []
+            for i, row in enumerate(results[result_offset:]):
+                if i == MAX_PROPOSE_OPTIONS:
+                    break
+                replacement_values = dict([(slot_to_column(key), to_human_readable(value))
+                                           for key, value in row.items()
+                                           if slot_to_column(key) in get_placeholders(self.representation)])
+                row_repr = self.representation.format(**replacement_values)
+                buttons.append({'title': row_repr, 'payload': f'/select_option{{'{{'}}"{RESULT_CHOICE_SLOT}": {i + 1}{{'}}'}}'})
+            if result_offset > 0:
+                buttons.append({'title': 'Previous', 'payload': f'/ask_previous_options'})
+            if result_offset < len(results) - MAX_PROPOSE_OPTIONS:
+                buttons.append({'title': 'More', 'payload': f'/ask_more_options'})
+            dispatcher.utter_message(text=message, buttons=buttons)
+
+        return [SlotSet(RESULT_OFFSET_SLOT, result_offset)]

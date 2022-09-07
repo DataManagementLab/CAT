@@ -1,0 +1,322 @@
+class AbstractFormAction(FormAction):
+    class Meta:
+        abstract = True
+
+    def __init__(self, target_table: str, target_column: str, target_slot: str, join_tables: List[str]):
+        self.target_table = target_table
+        self.target_column = target_column
+        self.target_slot = target_slot
+        self.join_tables = join_tables
+        self.joined_tables = []
+        self.constraints = dict((name, {}) for name in self.join_tables)
+        self.requestable_columns = defaultdict(list)
+        for slot in self.required_slots(None):
+            join_table, join_column, table, column = slot_to_table_column_with_join_table_column(slot)
+            self.requestable_columns[table_with_fk(join_table, join_column, table)].append(column)
+        self.distinct_targets = []
+        self.results = []
+        FormAction.__init__(self)
+
+    def name(self):
+        pass
+
+    @staticmethod
+    def target_slots(tracker: "Tracker") -> List[Text]:
+        pass
+
+    @staticmethod
+    def required_slots(tracker: "Tracker") -> List[Text]:
+        pass
+
+    def request_next_slot(
+            self,
+            dispatcher: "CollectingDispatcher",
+            tracker: "Tracker",
+            domain: Dict[Text, Any],
+    ) -> Optional[List[EventType]]:
+        # if we have our target slot or all slots are filled end the form
+        if self._should_request_next_slot(tracker) and self._has_empty_slots(tracker):
+            # If we have only our target table or all slots of joined tables are filled, join the next table
+            if db.should_join_next_table(self.target_table, self.joined_tables, self.constraints, self.requestable_columns):
+                next_table = db.get_best_join_table(self.target_table, self.joined_tables, self.constraints,
+                                                    self.requestable_columns)
+                if next_table:
+                    self.joined_tables.append(next_table)
+            # reset result in case slot was reset
+            db.select_into_table(target_table_alias=self.target_table,
+                                 additional_tables=self.joined_tables,
+                                 constraints=self.constraints,
+                                 result_table=INTERMEDIATE_RESULTS_TABLE)
+            next_slot = db.get_next_slot(self.target_table, self.joined_tables, self.constraints,
+                                         self.requestable_columns, INTERMEDIATE_RESULTS_TABLE)
+            dispatcher.utter_message(template=f'utter_ask_{next_slot}', **tracker.slots)
+            return [SlotSet(REQUESTED_SLOT, next_slot)]
+        # We are done
+        return None
+
+    def reset(self):
+        self.results = []
+        self.joined_tables = []
+        self.constraints = dict((name, {}) for name in self.join_tables)
+
+    async def submit(
+            self,
+            dispatcher: "CollectingDispatcher",
+            tracker: "Tracker",
+            domain: Dict[Text, Any],
+    ) -> List[EventType]:
+        if has_non_dont_care_constraints(self.constraints) and not self.results:
+            self.results = db.select(target_table_name=self.target_table, constraints=self.constraints,
+                                     distinct_on_target=self.target_column)
+        result_slot_event = set_serialized_slot(RESULT_SLOT, self.results)
+        result_offset_slot_event = SlotSet(RESULT_OFFSET_SLOT, 0)
+        self.reset()
+        return [result_slot_event, result_offset_slot_event, FollowupAction(f'action_propose_{self.target_table}')]
+
+    async def validate(
+            self,
+            dispatcher: "CollectingDispatcher",
+            tracker: "Tracker",
+            domain: Dict[Text, Any],
+    ) -> List[EventType]:
+        latest_intent = get_latest_intent(tracker)
+        # If we have to show options, get the intermediate result and set it
+        if latest_intent == INTENT_ASK_OPTIONS:
+            if len(self.distinct_targets) == 0:
+                dispatcher.utter_message('Sorry i cant show you options, you havent given me any constraints.')
+                return []
+            self.results = db.select(target_table_alias=self.target_table, additional_tables=self.join_tables,
+                                     constraints=self.constraints, distinct_on_target=self.target_column)
+            return [
+                Form(None),
+                set_serialized_slot(RESULT_SLOT, self.results),
+                SlotSet(REQUESTED_SLOT, None),
+                SlotSet(RESULT_OFFSET_SLOT, 0),
+                FollowupAction(f'action_propose_{self.target_table}')]
+        # if the user asked to start over, reset the form
+        if latest_intent == INTENT_RESTART:
+            self.reset()
+            return [Restarted()]
+        # extract non-requested slot values
+        slot_values = self.extract_other_slots(dispatcher, tracker, domain)
+        # extract requested slot
+        slot_to_fill = tracker.get_slot(REQUESTED_SLOT)
+        if slot_to_fill:
+            # extracts the slot from given entities or tries to use the text if no entity was detected
+            slot_value_dict = self.extract_requested_slot(dispatcher, tracker, domain)
+            # If the user cannot provide value set it to dont care
+            if not slot_value_dict and latest_intent in [INTENT_DONT_CARE, INTENT_DENY]:
+                logger.debug('User uttered no slot value, using DONT_CARE')
+                slot_value_dict[slot_to_fill] = DONT_CARE
+            if slot_value_dict:
+                slot_values.update({slot_to_fill: slot_value_dict[slot_to_fill]})
+        return await self.validate_slots(slot_values, dispatcher, tracker, domain)
+
+    async def validate_slots(
+            self,
+            slot_dict: Dict[Text, Any],
+            dispatcher: "CollectingDispatcher",
+            tracker: "Tracker",
+            domain: Dict[Text, Any],
+    ) -> List[EventType]:
+        logger.debug(f"Validating extracted slots: {slot_dict}")
+        # if there are no slots set at all return
+        input_slots_size = len(list(slot_dict.items()))
+        if input_slots_size == 0:
+            return []
+        # match slots
+        matched_slot_dict, constraints = self._match_slots(slot_dict, dispatcher)
+        # if there was a slot set but no match found revert user input
+        if input_slots_size == 1 and len(matched_slot_dict.items()) == 0:
+            dispatcher.utter_message('Sorry i could not find anything like this')
+            slot = list(slot_dict.keys())[0]
+            return [SlotSet(slot, None)]
+        # no new information, dont try to query database
+        if all([value == DONT_CARE for slot, value in slot_dict.items()]):
+            update_constraints(self.constraints, constraints)
+            return [set_serialized_slot(slot, value) for slot, value in slot_dict.items()]
+        return self._validate_results(constraints, dispatcher, tracker, domain)
+
+    def _match_slots(self, slot_dict: Dict[str, Union[str, List[str]]], dispatcher: "CollectingDispatcher"):
+        matched_slots = {}
+        constraints = defaultdict(dict)
+        for slot, value in slot_dict.items():
+            join_table, join_table_column, table, column = slot_to_table_column_with_join_table_column(slot)
+            # dont lookup DONT_CARE values
+            if value == DONT_CARE:
+                matched_slots[slot] = DONT_CARE
+                constraints[table][column] = [db.build_constraint([DONT_CARE])]
+                continue
+            column_type = db.get_column_type(table, column)
+            match_func = getattr(self, f'_match_{column_type}')
+            # todo match all values if multiple values are given
+            match_value, match_constraints = match_func(table, column, value, dispatcher)
+            if match_value is not None:
+                key = table_with_fk(join_table, join_table_column, table)
+                constraints[key][column] = match_constraints
+                matched_slots[slot] = match_value
+        return matched_slots, constraints
+
+    def _match_string(self, table: str, column: str, value: Union[str, List[str]], dispatcher: "CollectingDispatcher",
+                      threshold=0.5):
+        slot_value = None
+        matches, similarity = db.get_similar_string_values(table, column, value, threshold)
+        constraints = []
+        if not matches:
+            logger.debug(f'No match found for {value}')
+            # todo move to outter function, should only be uttered if at least one slot is set
+            dispatcher.utter_message(
+                f'I could not find any {table} where {column} is matching {value}, ignoring input.')
+        elif len(matches) == 1:
+            slot_value = matches[0]
+            if similarity == 1.0:
+                logger.debug(f'Found an exact match {slot_value}')
+                constraints.append(db.build_constraint([slot_value]))
+            else:
+                logger.debug(f'Found a match {slot_value}: (similarity: {similarity})')
+                # todo deactivate form and propose matches
+                dispatcher.utter_message(f'Assuming you meant {slot_value}')
+                constraints.append(db.build_constraint([slot_value]))
+        elif len(matches) > 1:
+            logger.debug(f'Found multiple matches with similarity {similarity}')
+            dispatcher.utter_message(f'I found results similar to {slot_value}')
+            for i, match in enumerate(matches):
+                logger.debug(f'{i + 1}: {match}')
+                dispatcher.utter_message(f'{i + 1}: {match}')
+            slot_value = value
+            constraints.append(db.build_constraint(matches, OPERATOR_IN))
+        return slot_value, constraints
+
+    def _match_date(self, table: str, column: str, value: Union[str, List[str]], dispatcher: "CollectingDispatcher"):
+        return self._match_datetime_impl(table, column, value, dispatcher, DateTypeEnum.date)
+
+    def _match_time(self, table: str, column: str, value: Union[str, List[str]], dispatcher: "CollectingDispatcher"):
+        return self._match_datetime_impl(table, column, value, dispatcher, DateTypeEnum.time)
+
+    def _match_datetime(self, table: str, column: str, value: Union[str, List[str]],
+                        dispatcher: "CollectingDispatcher"):
+        return self._match_datetime_impl(table, column, value, dispatcher, DateTypeEnum.datetime)
+
+    def _match_datetime_impl(self, table: str, column: str, value: Union[str, List[str]],
+                             dispatcher: "CollectingDispatcher", part: DateTypeEnum):
+        datetime_from = None
+        datetime_to = None
+        if part == DateTypeEnum.date:
+            datetime_from, datetime_to = duckling.parse_date(value)
+        elif part == DateTypeEnum.time:
+            datetime_from, datetime_to = duckling.parse_time(value)
+        elif part == DateTypeEnum.datetime:
+            datetime_from, datetime_to = duckling.parse_datetime(value)
+        constraints = []
+        if not datetime_from and not datetime_to:
+            dispatcher.utter_message(f'Sorry, {value} is not a valid date or time')
+            return None, []
+        if datetime_from == datetime_to:
+            constraints.append(db.build_constraint([datetime_from], operator=OPERATOR_EQUAL))
+        else:
+            if datetime_from:
+                constraints.append(db.build_constraint([datetime_from], operator=OPERATOR_GTE))
+            if datetime_to:
+                constraints.append(db.build_constraint([datetime_to], operator=OPERATOR_LTE))
+        matches = db.select(target_table_alias=table, constraints={table: {column: constraints}},
+                            distinct_on_target=column)
+        if len(matches) == 0:
+            return None, []
+        return value, constraints
+
+    def _match_float(self, table: str, column: str, value: Union[str, List[str]], dispatcher: "CollectingDispatcher"):
+        return self._match_numeric(table, column, value, dispatcher)
+
+    def _match_integer(self, table: str, column: str, value: Union[str, List[str]], dispatcher: "CollectingDispatcher"):
+        return self._match_numeric(table, column, value, dispatcher)
+
+    def _match_numeric(self,
+                       table: str,
+                       column: str,
+                       value: Union[str, List[str]],
+                       dispatcher: "CollectingDispatcher",
+                       exact: bool = False):
+        value_from, value_to = duckling.parse_numeric(value)
+        constraints = []
+        if not value_from and not value_to:
+            dispatcher.utter_message(f'Sorry, {value} is not a valid number')
+            return None, []
+        if value_from == value_to:
+            constraints.append(db.build_constraint([value_from], operator=OPERATOR_EQUAL))
+        else:
+            if exact:
+                dispatcher.utter_message(f'Sorry, you have to give me an exact number')
+                return None, []
+            if value_from:
+                constraints.append(db.build_constraint([value_from], operator=OPERATOR_GTE))
+            if value_to:
+                constraints.append(db.build_constraint([value_to], operator=OPERATOR_LTE))
+        matches = db.select(table, constraints={table: {column: constraints}}, distinct_on_target=column)
+        if len(matches) == 0:
+            return None, []
+        return value, constraints
+
+    def _match_bool(self,
+                    table: str,
+                    column: str,
+                    value: str,
+                    dispatcher: "CollectingDispatcher"):
+        constraints = [db.build_constraint([value])]
+        matches = db.select(table, constraints={table: {column: constraints}}, distinct_on_target=column)
+        if len(matches) == 0:
+            return None, []
+        return value, constraints
+
+    def _validate_results(self,
+                          new_constraints: Dict[str, Dict[str, List[Dict[str, any]]]],
+                          dispatcher: "CollectingDispatcher",
+                          tracker: "Tracker",
+                          domain: Dict[Text, Any]
+                          ) -> List[EventType]:
+        test_constraints = copy.deepcopy(self.constraints)
+        update_constraints(test_constraints, new_constraints)
+        if has_non_dont_care_constraints(new_constraints):
+            results_table = db.select_into_table(target_table_alias=self.target_table,
+                                                 additional_tables=self.joined_tables,
+                                                 constraints=test_constraints,
+                                                 result_table=INTERMEDIATE_RESULTS_TABLE)
+            distinct_targets = db.select_distinct(table_name=results_table, column_name=self.target_slot)
+        else:
+            update_constraints(self.constraints, new_constraints)
+            return []
+        # revert user utterance, do not update constraints if no result,
+        if len(distinct_targets) == 0:
+            dispatcher.utter_message('Sorry, there is no result matching your constraints')
+            return [SlotSet(column_to_slot(table, column), None) for table in new_constraints.keys() for column in
+                    new_constraints[table]]
+        # if at least one match, update the possible results, and update the constraints
+        else:
+            self.distinct_targets = distinct_targets
+            update_constraints(self.constraints, new_constraints)
+        # if we have a unique match, set all slots accordingly
+        if len(self.distinct_targets) == 1:
+            self.constraints[self.target_table][self.target_column] = [
+                db.build_constraint([self.distinct_targets[0][self.target_slot]])]
+            full_results_table = db.select_into_table(target_table_alias=self.target_table,
+                                                      additional_tables=self.join_tables,
+                                                      constraints=self.constraints,
+                                                      result_table=INTERMEDIATE_RESULTS_TABLE,
+                                                      distinct_on_target=self.target_column)
+            self.results = db.select_all(full_results_table)
+            return [set_serialized_slot(RESULT_SLOT, self.results)] + \
+                   [set_serialized_slot(slot, value) for slot, value in self.results[0].items()
+                    if slot in self.required_slots(tracker) + self.target_slots(tracker)]
+        return []
+
+    def _should_request_next_slot(self, tracker: "Tracker") -> bool:
+        return (len(self.results) == 0 or len(self.results) > 5) and len(
+            [slot for slot in self.target_slots(tracker) if self._should_request_slot(tracker, slot)]) > 0
+
+    def _has_filled_slots(self, tracker: "Tracker") -> bool:
+        return len(self._get_empty_slots(tracker)) < len(self.required_slots(tracker))
+
+    def _has_empty_slots(self, tracker: "Tracker") -> bool:
+        return len(self._get_empty_slots(tracker)) > 0
+
+    def _get_empty_slots(self, tracker: "Tracker") -> List[str]:
+        return [slot for slot in self.required_slots(tracker) if self._should_request_slot(tracker, slot)]

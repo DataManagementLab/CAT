@@ -1,0 +1,23 @@
+<!-- Lookup table values -->
+<mat-form-field [hintLabel]="'Lookup Table'" class="lookup-chip-list-field">
+  <mat-chip-list #lookupTableList>
+    <mat-chip *ngFor="let lookupValue of column.lookupTable" [selectable]="selectable" [removable]="removable"
+              (selectionChange)="chipSelectionChange($event)"
+              (removed)="removeValueFromLookupTable(lookupValue.value)"
+              (click)="chipClicked(lookupValue.value)">
+      {{lookupValue.value}}
+      <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+    <input matInput type="text" placeholder="Values for the NER lookup table"
+           [matChipInputFor]="lookupTableList"
+           [matChipInputSeparatorKeyCodes]="valueSeparatorCodes"
+           [matChipInputAddOnBlur]="addOnBlur"
+           (matChipInputTokenEnd)="addValueToLookupTable($event)">
+  </mat-chip-list>
+</mat-form-field>
+<button mat-icon-button (click)="getColumnValues()" [disabled]="!column.requestable">
+  <mat-icon>autorenew</mat-icon>
+</button>
+<!-- entity synonyms for each lookup table entry -->
+<app-synonym-chip-list *ngIf="targetValue" [(target)]="targetValue.synonyms" [placeholder]="'Add synonyms...'"></app-synonym-chip-list>
+

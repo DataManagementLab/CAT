@@ -1,0 +1,25 @@
+name: tcb
+channels:
+- defaults
+- conda-forge
+- cogsci
+dependencies:
+- python=3.7.*
+- psycopg2 >= 2.8.3
+- faker >= 2.0.0
+- pandas
+- nltk
+- xlrd
+- pyYAML
+- editdistance
+- flask
+- flask-restplus
+- flask-cors
+- flask-socketio
+- flask-jwt-extended
+- jinja2
+- pip
+- pip:
+  - rasa >= 1.4.3
+  - rasa-sdk >= 1.4.0
+  - num2word

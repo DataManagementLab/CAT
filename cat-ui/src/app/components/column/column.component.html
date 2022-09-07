@@ -1,0 +1,59 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>{{column.name | uppercase}} ({{column.dataType | uppercase}})</mat-card-title>
+    <mat-card-subtitle>Provide natural language descriptions for the column, determine data types, requestability as a
+      slot and FK references
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <h4>Natural language expressions</h4>
+    <!-- Natural language expressions -->
+    <app-synonym-chip-list [(target)]="column.nlExpressions"></app-synonym-chip-list>
+    <!-- Regex for this entity -->
+    <h4>Named Entity Recognition</h4>
+    <mat-form-field [hintLabel]="'Regular Expression'">
+      <input matInput type="text" placeholder="A regular expression for NER" [(ngModel)]="column.regex">
+    </mat-form-field>
+    <!-- Lookup table for values of this entity -->
+    <app-column-lookup-list [table]="table" [column]="column"></app-column-lookup-list>
+    <h4>Slot configuration</h4>
+    <!-- Use as slot -->
+    <mat-form-field [hintLabel]="'Determines whether the column can be used as a slot and requested to the user'">
+      <mat-checkbox [indeterminate]="false" [(ngModel)]="column.requestable" [color]="'primary'">Requestable
+      </mat-checkbox>
+      <input matInput class="hidden-input" placeholder=''>
+    </mat-form-field>
+    <!-- Display to user -->
+    <mat-form-field [hintLabel]="'Determines whether the column value is displayed to the user'">
+      <mat-checkbox [indeterminate]="false" [(ngModel)]="column.displayable" [color]="'primary'">Displayable
+      </mat-checkbox>
+      <input matInput class="hidden-input" placeholder=''>
+    </mat-form-field>
+    <!-- Resolve FK relation -->
+    <mat-form-field *ngIf="column.tableReference"
+                    [hintLabel]="'Determines whether when flattening dependencies the FK relation is resolved'">
+      <mat-checkbox [indeterminate]="false" [(ngModel)]="column.resolveDependency" [color]="'primary'">Resolve FK
+        relation
+      </mat-checkbox>
+      <input matInput class="hidden-input" placeholder=''>
+    </mat-form-field>
+    <h4>Database configuration</h4>
+    <!-- data type -->
+    <mat-form-field [hintLabel]="'Data type'">
+      <input matInput [placeholder]="column.dataType" [disabled]="true">
+    </mat-form-field>
+    <!-- FK references -->
+    <mat-form-field *ngIf="column.tableReference" [hintLabel]="'The table of the foreign key reference'">
+      <input matInput [placeholder]="column.tableReference" [disabled]="true">
+    </mat-form-field>
+    <mat-form-field *ngIf="column.columnReference" [hintLabel]="'The column of the foreign key reference'">
+      <input matInput [placeholder]="column.columnReference" [disabled]="true">
+    </mat-form-field>
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <button mat-button *ngIf="!first" (click)="previousTab()">Previous column
+    </button>
+    <button mat-button *ngIf="!last" (click)="nextTab()">Next column
+    </button>
+  </mat-card-actions>
+</mat-card>

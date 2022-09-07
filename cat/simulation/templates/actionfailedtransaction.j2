@@ -1,0 +1,11 @@
+{% extends "action.j2" -%}
+{% block baseClass -%}(AbstractActionFailedTransaction){% endblock -%}
+{% block init -%}
+        AbstractActionFailedTransaction.__init__(self, '{{ transactionName }}')
+{% endblock -%}
+{% block name %}
+    def name(self):
+        return 'action_{{ actionName }}'
+{% endblock -%}
+{% block methods -%}
+{% endblock -%}

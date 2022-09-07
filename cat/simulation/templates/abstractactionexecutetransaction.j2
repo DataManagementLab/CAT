@@ -1,0 +1,32 @@
+class AbstractActionExecuteTransaction(Action):
+    class Meta:
+        abstract = True
+
+    def __init__(self,
+                transaction_name: str,
+                operation: str,
+                argument_slots: List[str],
+                return_slots: List[str]):
+        self.transaction_name = transaction_name
+        self.operation = operation
+        self.argument_slots = argument_slots
+        self.return_slots = return_slots
+        Action.__init__(self)
+
+    def name(self):
+        pass
+
+    def run(self,
+            dispatcher: "CollectionDispatcher",
+            tracker: Tracker,
+            domain: Dict[Text, Any]
+            ) -> List[Dict[Text, Any]]:
+        arguments = {slot_to_proc_arg(slot): get_deserialized_slot(tracker, slot) for slot in self.argument_slots}
+        results, error = db.call_procedure(self.transaction_name, self.operation, arguments)
+        if error:
+            return [SlotSet(TRANSACTION_ERROR_SLOT, clean_error(error)),
+                    FollowupAction(f'action_failed_transaction_{self.transaction_name}')]
+        if self.operation == OPERATION_SELECT:
+            return [set_serialized_slot(TRANSACTION_RESULT_SLOT, results),
+                    FollowupAction(f'action_success_transaction_{self.transaction_name}')]
+        return [FollowupAction(f'action_success_transaction_{self.transaction_name}')]

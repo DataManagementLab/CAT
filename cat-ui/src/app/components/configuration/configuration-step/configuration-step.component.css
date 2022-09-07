@@ -1,0 +1,32 @@
+.header-icon {
+  margin-top: 7px;
+  font-size: 16px;
+}
+
+.mat-nav-list .mat-list-item {
+  height: 24px;
+  font-size: 13px;
+}
+
+.sidenav-header-item {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}
+
+.tables-card {
+  margin: 5px;
+}
+
+.procedures-card {
+  margin: 5px;
+}
+
+.title-button-list {
+  display: inline-flex;
+  margin-bottom: 10px;
+}
+
+.title-button {
+  margin: 4px;
+}
